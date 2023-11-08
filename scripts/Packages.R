@@ -9,7 +9,7 @@ packages <- c("plotly","stargazer","AER","huxtable","fixest","modelsummary","ggp
               "MASS", "scales", "nlme", "psych", "ordinal", "lmtest", "ggpubr", "dslabs", 
               "stringr", "assist", "ggstatsplot", "forcats", "styler", "remedy", 
               "addinslist", "esquisse", "summarytools", "magrittr","fmsb", 
-              "pander", "cluster", "abind","janitor","skimr","rstatix","flextable","gtsummary")
+              "pander", "cluster", "abind","janitor","skimr","rstatix","flextable","gtsummary","gganimate")
 
 # Install packages not yet installed
 installed_packages <- packages %in% rownames(installed.packages())
