@@ -1,0 +1,287 @@
+---
+title: "Initiiation a dplyr et ggplot2"
+author: "Data 221"
+date: "30/01/2021"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## qu'est ce que c'est dplyr
+
+`r "dplyr"` est une grammaire de manipulation de données, fournissant un ensemble cohérent de verbes qui vous aident à résoudre les défis de manipulation de données les plus courants:
+
+
+```{r lecture}
+
+library(readxl)
+library(dplyr)
+options(scipen = 999)
+list.files("data")
+fao_fbs=as.data.frame(read.csv("data/FAO_FBS_Senegal.csv"))
+View(fao_fbs)
+str(fao_fbs)
+
+fao_cdu=as.data.frame(read.csv("data/FAO_CDU_Senegal.csv"))
+View(fao_cdu)
+str(fao_cdu)
+
+path_mb="data/indicateur_BM_Senegal.xls"
+excel_sheets(path_mb)
+donnee_bm=as.data.frame(read_excel(path_mb,sheet = "Data",skip = 3))
+View(donnee_bm)
+str(donnee_bm)
+
+
+path_fmi="data/FMI_PIB_et_composantes.xlsx"
+excel_sheets(path_fmi)
+donnee_fmi=as.data.frame(read_excel(path_fmi,sheet = "Annual",skip = 6))
+View(donnee_fmi)
+str(donnee_fmi)
+```
+
+## dplyr::select
+
+Sélectionner (et renommer éventuellement) des variables dans un data.frame, en utilisant un mini-langage concis qui facilite la référence aux variables en fonction de leur nom (par exemple, sélectionner toutes les colonnes de a à gauche à f à droite). 
+Vous pouvez également utiliser des fonctions de **prédicat** comme **is.numeric** pour sélectionner des variables en fonction de leurs propriétés.
+
+
+Les sélections de dplyr implémentent un dialecte de R où les opérateurs facilitent la sélection
+variables:
+
+** : pour sélectionner une plage de variables consécutives.
+
+** ! pour prendre le complément d'un ensemble de variables.
+
+** & et | pour sélectionner l'intersection ou l'union de deux ensembles de variables.
+
+** c () pour combiner des sélections.
+
+De plus, vous pouvez utiliser des aides à la sélection. 
+Certains assistants(helpers) sélectionnent des colonnes spécifiques:
+
+** everything(): correspond à toutes les variables.
+
+** last_col(): Sélectionnez la dernière variable
+
+Ces assistants sélectionnent des variables en faisant correspondre des modèles dans leurs noms:
+
+**starts_with()**: commence par un pre x.
+
+**ends_with()**: se termine par un su x.
+
+**contains()**: contient une chaîne littérale.
+ 
+**matches()**: correspond à une expression régulière.
+
+**num_range()**: correspond à une plage numérique telle que x01, x02, x03.
+
+Ces assistants sélectionnent des variables à partir d'un vecteur de caractères:
+
+**all_of()**: correspond aux noms de variables dans un vecteur de caractères. Tous les noms doivent être présents, sinon, une erreur hors limites est émise.
+
+**all_of()**: Identique à tout (), sauf qu'aucune erreur n'est renvoyée pour les noms qui ne
+exister.
+
+Cet assistant sélectionne les variables avec une fonction:
+
+**where()**: applique une fonction à toutes les variables et sélectionne celles pour lesquelles la fonction
+renvoie TRUE.
+
+
+```{r pressure, echo=FALSE}
+
+select(fao_cdu,Element,Item,Year,Unit,Flag,Flag.Description)
+
+fao_cdu %>% select(Element,Item,Year,Unit,Flag,Flag.Description)
+
+fao_cdu %>% select(contains("Code"))
+
+fao_cdu %>% select(!contains("Code"))
+
+fao_cdu %>% select(ends_with("Code"))
+
+fao_cdu %>% select(where(is.numeric))
+
+fao_cdu %>% select(is.numeric)
+
+fao_cdu %>% select(!is.numeric & !contains("Domain"))
+
+fao_fbs %>% select(DC=`ï..Domain.Code`, `The name I wamt`=Domain,valeur=Value)
+annee=as.character(2000:2020)
+annee2=as.character(2010:2035)
+
+donnee_bm %>% select(all_of(annee))
+
+# donnee_bm %>% select(all_of(annee2))
+
+donnee_bm %>% select(any_of(annee2))
+
+donnee_fmi %>% select(is.character)
+
+
+```
+
+
+## dplyr::filter
+
+La fonction filter () est utilisée pour sous-ensemble un bloc de données, en conservant toutes les lignes qui satisfont votre conditions. Pour être conservée, la ligne doit produire une valeur TRUE pour toutes les conditions. Remarque que lorsqu'une condition est évaluée à NA, la ligne sera supprimée, contrairement au sous-ensemble de base avec
+[.
+
+Fonctions de filtre utiles
+Il existe de nombreuses fonctions et opérateurs utiles lors de la construction des expressions
+utilisé pour filtrer les données:
+
+ ** ==, >, >= etc
+ 
+ ** &, |, !, xor()
+ 
+ ** is.na()
+ 
+ ** between(), near()
+
+```{r filtrer}
+
+unique(fao_fbs$Element)
+
+fao_fbs %>% filter(Element=="Production")
+
+fao_fbs %>% filter(Element %in% c("Production","Import Quantity"))
+
+fao_fbs %>% filter(Value>100)
+
+fao_fbs %>% filter(Value>100 & Element.Code==5510)
+
+donnee_bm %>% filter(is.na(`2020`))
+
+donnee_bm %>% select(`Indicator Name`,`Indicator Code`,`2020`) %>% filter(is.na(`2020`))
+
+```
+
+
+
+## dplyr::mutate
+
+mutate () ajoute de nouvelles variables et préserve celles existantes; transmute () ajoute de nouvelles variables
+et supprime ceux existants. Les nouvelles variables écrasent les variables existantes du même nom.
+Les variables peuvent être supprimées en définissant leur valeur sur NULL.
+
+Useful mutate functions
+ +, -, log(), etc., for their usual mathematical meanings
+ lead(), lag()
+ dense_ank(), min_ank(), percent_rank(), row_number(), cume_dist(), ntile()
+ cumsum(), cummean(), cummin(), cummax(), cumany(), cumall()
+ na if(), coalesce()
+ if else(), recode(), case when()
+
+```{r mut}
+
+fao_cdu %>% select(Item,Element,Year,Value) %>% mutate(log_value=log(Value))
+
+fao_cdu %>% filter(Item.Code=="111" & Element=="Import Quantity") %>%  
+  select(!contains(c("code","Flag"))) %>% 
+  mutate(Q1=quantile(Value,0.25,na.rm=TRUE),
+         moyenne=mean(Value,na.rm=TRUE))
+
+donnee_bm %>% mutate_if(is.numeric,round,1)
+
+test=donnee_bm %>% select(matches("\\d\\d\\d\\d"))
+
+test=test %>% mutate_all(round,2)
+
+donnee_bm %>% mutate(across(where(is.numeric),~round(.x)))
+
+#mutate les variables dont le nom contient un nombre (ici les années)
+donnee_fmi %>% mutate_at(vars(matches("\\d")),as.numeric)
+
+donnee_fmi=donnee_fmi %>% mutate_at(vars(matches("\\d\\d\\d\\d")),as.numeric)
+  
+
+```
+
+
+## dplyr::group_by & summarise
+
+La plupart des opérations sur les données sont effectuées sur des groupes définis par des variables. group by () prend un data.frame existant et le convertit en un data.frame groupé où les opérations sont effectuées "par groupe".
+
+ungroup () supprime le regroupement
+
+
+```{r gb}
+
+fao_cdu %>% select(!contains(c("Code","Flag"))) %>% group_by(Item)
+
+fao_cdu %>% select(!contains(c("Code","Flag"))) %>% group_by(Item,Element) %>% mutate(moyenne=mean(Value,na.rm=TRUE))
+
+
+
+fao_cdu %>% select(!contains(c("Code","Flag"))) %>% group_by(Item,Element) %>% mutate(moyenne=mean(Value,na.rm=TRUE)) %>% ungroup() %>% mutate(moyenne1=mean(Value,na.rm=TRUE))
+
+
+```
+
+summarise () crée un nouveau data.frame. Il aura une (ou plusieurs) lignes pour chaque combinaison
+des variables de regroupement (group_by); s'il n'y a pas de variables de regroupement, la sortie aura une seule ligne résumant toutes les observations dans l'entrée. Il contiendra une colonne pour chaque regroupement
+variable et une colonne pour chacune des statistiques récapitulatives que vous avez spécifiées.
+summary () et summary () sont des synonymes.
+
+```{r sum}
+fao_cdu %>% select(!contains(c("Code","Flag"))) %>% group_by(Item,Element) %>%
+  summarise(moyenne=mean(Value,na.rm=TRUE),
+            n_obs=n())
+
+```
+
+## Les jointures (mutate-join & filter-join)
+
+Les jointures de type mutate-join ajoutent des colonnes de y à x, correspondant aux lignes en fonction des clés:
+
+inner_join(): inclut toutes les lignes de x et y.
+
+left_join():: inclut toutes les lignes de x.
+
+right_join():inclut toutes les lignes de y.
+
+full_join (): inclut toutes les lignes de x ou y.
+
+Si une ligne de x correspond à plusieurs lignes de y, toutes les lignes de y seront renvoyées une fois pour chaque
+ligne correspondante dans x.
+
+```{r jointure}
+
+
+cdu_1=fao_cdu %>%filter(Element.Code==5510) %>% select(Item,Element,Year,Production=Value)
+cdu_2=fao_cdu %>%filter(Element.Code==5610) %>% select(Item,Element,Year,Importation=Value)
+
+cdu_1 %>% left_join(cdu_2)
+cdu_2 %>% right_join(cdu_1)
+cdu_1 %>% full_join(cdu_2)
+
+cdu_1 %>% anti_join(cdu_2)
+cdu_2 %>% anti_join(cdu_1)
+
+```
+
+
+## tidyr::gather & spread
+
+```{r}
+library(tidyr)
+
+donnee_bm=donnee_bm %>% gather(key = Annee, value = "Indicateur",matches("\\d\\d"))
+
+```
+
+
+## Exercice
+
+1. calculter le taux de dépendance au importantion de chaque produits alimentaires (base fao_cdu)
+2. calculer le taux d'auto-suffisance alimentaire de chaque produit alimentaire
+3. calculer les depense public en % du PIB
+4. Calculer la consommation des menage en % du PIB (donnee_fmi)
+5. Extraire les indicateur n'ayant jamais de données de manquantes depuis 1960 dans la base donnee_bm
+
