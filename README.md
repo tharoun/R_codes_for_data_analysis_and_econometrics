@@ -1,1 +1,1 @@
-# R_codes_for_data_analysis_and_econometrics
+# R codes for data analysis and econometrics
