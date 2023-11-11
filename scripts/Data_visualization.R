@@ -6,7 +6,7 @@
 ### loading packages
 source(here::here("scripts","Packages.R"))
 
-########## Visualisation using ggplot ######
+############################## Visualisation using ggplot ################################
 
 #### Bar plots : data etalons AFCON
 data_etalons <- read_excel(here::here("raw_data", "data_etalons.xlsx"))
@@ -55,6 +55,9 @@ result_graph<-p+labs(title = "Résultat des matchs étalons vs futurs adversaire
   )
 
 result_graph
+
+#### Make a ggplot graph dynamic using plotly
+ggplotly(result_graph)
 
 #### Make a ggplot graph dynamic using gganimate
 
@@ -150,3 +153,96 @@ radarchart( data  , axistype=1 ,
 )
 # Add a legend
 legend(x=0.7, y=1, legend = rownames(data[-c(1,2),]), bty = "n", pch=20 , col=colors_in , text.col = "grey", cex=1.2, pt.cex=3)
+
+
+
+############################## Visualisation using sjPlot ################################
+
+# We'll use "Wage" dataset about salaries from ISLR and "pisaitems" dataset with likert data
+
+## Thanks to : https://yuzar-blog.netlify.app/posts/2022-08-01-sjplot/
+## For more topics: https://strengejacke.github.io/sjPlot/
+
+
+##View dataframe with view_df
+view_df(Wage, show.frq = T, show.prc = T, show.na = T)
+
+##Plot frequencies
+
+#Simple frequencies
+Wage %>% 
+  plot_frq(education)
+#Frequencies by group
+p <- Wage %>% 
+  group_by(race) %>% 
+  plot_frq(education) %>%
+  plot_grid()
+#Save the plot 
+save_plot(filename =here::here("Outputs","race_vs_education.jpg"), fig = p, width = 30, height = 19)
+
+#Frequencies by job type
+plot_grpfrq(
+  var.cnt = Wage$education, 
+  var.grp = Wage$jobclass)
+
+
+### Descriptive stats cross tables
+tab_xtab(
+  var.row = Wage$education, 
+  var.col = Wage$jobclass, 
+  show.row.prc = T,
+  file = here::here("Outputs","desc.html")
+  )
+
+##Plot stacked proportional bars cross (pivot) tables
+plot_xtab(
+  x   = Wage$education, 
+  grp = Wage$jobclass, 
+  margin  = "row", 
+  bar.pos = "stack",
+  show.summary = TRUE,
+  coord.flip   = TRUE)
+
+##Plot histograms of salaries
+Wage %>% 
+  group_by(jobclass) %>% 
+  plot_frq(wage, type = "histogram", show.mean = TRUE, normal.curve = TRUE) %>% 
+  plot_grid()
+
+################## Plot model results with sjPlot #########################
+data(pisaitems)
+#select only some variables
+d <- pisaitems %>% 
+  dplyr::select(starts_with("ST25Q"))
+#frequencies with the package likert 
+plot_likert(d) 
+
+## Linear regression and results' visualisation
+#Simple model
+m <- lm(wage ~ education, data = Wage)
+#Table with coeffitients
+tab_model(m, 
+          show.reflvl = T, 
+          show.intercept = F, 
+          p.style = "numeric_stars")
+#Plot coefficients
+plot_model(m, show.values = TRUE, width = 0.1)+
+  ylab("Increase in salary as compared to no education")
+
+#Plot multiple models
+
+# fit two models
+fit1 <- lm(age ~ education + jobclass + health_ins, data = Wage)
+fit2 <- lm(wage ~ education + jobclass + health_ins, data = Wage)
+
+# plot multiple models
+plot_models(fit1, fit2, show.values = T, grid = TRUE)
+
+## Plot on the same graph
+plot_models(fit1, fit2, p.shape = TRUE)
+
+##Table with more models
+tab_model(fit1, fit2, 
+          collapse.ci = TRUE, 
+          p.style     = "numeric_stars",
+          file = here::here("Outputs","two_models.html"))
